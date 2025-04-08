@@ -1,123 +1,119 @@
--- File: esp_v2.lua - Full LT2 GUI + Cheats
--- By: dyren
+-- // LT2 Ultimate Hub - esp_v2.lua Rework //
+-- Full GUI: ESP, Fly, WalkSpeed, Dupe, AutoChop
 
--- GUI Library (Linoria Style)
+-- Dependencies
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/Library.lua"))()
-local ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/addons/ThemeManager.lua"))()
-local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/addons/SaveManager.lua"))()
-
 local Window = Library:CreateWindow({
-    Title = 'LT2 Ultimate Hub',
+    Title = "LT2 Ultimate Hub",
     Center = true,
-    AutoShow = true
+    AutoShow = true,
 })
 
-local Tabs = {
-    Main = Window:AddTab('Main'),
-    ESP = Window:AddTab('ESP'),
-    Misc = Window:AddTab('Misc'),
-    Settings = Window:AddTab('Settings')
-}
+-- Tabs
+local MainTab = Window:AddTab("Main")
+local ESPTab = Window:AddTab("ESP")
+local MiscTab = Window:AddTab("Misc")
+local SettingsTab = Window:AddTab("Settings")
 
--- Variables
-local Players = game:GetService("Players")
+-- // Fly Feature
+local flying = false
+local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
-local ESPEnabled = false
+local plr = game.Players.LocalPlayer
+local char = plr.Character or plr.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local flySpeed = 50
 
--- ESP Feature
-Tabs.ESP:AddToggle('ToggleESP', {
-    Text = 'Enable Player ESP',
-    Default = false,
-    Callback = function(v)
-        ESPEnabled = v
+MainTab:AddButton("Toggle Fly (F)", function()
+    flying = not flying
+end)
+
+UIS.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.F then
+        flying = not flying
     end
-})
+end)
 
-local function createESP(player)
-    if player == LocalPlayer then return end
-    local espText = Drawing.new("Text")
-    espText.Visible = false
-    espText.Center = true
-    espText.Outline = true
-    espText.Font = 2
-    espText.Size = 13
-    espText.Color = Color3.fromRGB(255, 0, 0)
-    espText.Text = player.Name
+RunService.RenderStepped:Connect(function()
+    if flying and hrp then
+        hrp.Velocity = Vector3.new(0, flySpeed, 0)
+    end
+end)
+
+-- // ESP Feature
+shared.espEnabled = true
+
+function createESP(player)
+    if player == plr then return end
+    local esp = Drawing.new("Text")
+    esp.Size = 16
+    esp.Center = true
+    esp.Outline = true
+    esp.Color = Color3.fromRGB(0, 255, 0)
+    esp.Visible = false
 
     RunService.RenderStepped:Connect(function()
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local pos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
-            if onScreen and ESPEnabled then
-                espText.Position = Vector2.new(pos.X, pos.Y)
-                espText.Visible = true
+        if shared.espEnabled and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local pos, onscreen = workspace.CurrentCamera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
+            if onscreen then
+                esp.Position = Vector2.new(pos.X, pos.Y)
+                esp.Text = player.Name
+                esp.Visible = true
             else
-                espText.Visible = false
+                esp.Visible = false
             end
         else
-            espText.Visible = false
+            esp.Visible = false
         end
     end)
 end
 
-for _, p in ipairs(Players:GetPlayers()) do createESP(p) end
-Players.PlayerAdded:Connect(createESP)
+for _, p in pairs(game.Players:GetPlayers()) do
+    createESP(p)
+end
 
--- Movement: WalkSpeed & Fly
-Tabs.Main:AddSlider('WalkSpeedSlider', {
-    Text = 'Walk Speed',
-    Default = 16,
-    Min = 16,
-    Max = 100,
-    Rounding = 0,
-    Callback = function(v)
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.WalkSpeed = v
-        end
-    end
-})
+game.Players.PlayerAdded:Connect(createESP)
 
-Tabs.Main:AddToggle('ToggleFly', {
-    Text = 'Enable Fly (press F)',
-    Default = false,
-    Callback = function(v)
-        getgenv().fly = v
-        if v then loadstring(game:HttpGet("https://pastebin.com/raw/KxvY5Cxa"))() end
-    end
-})
-
--- Dupe Item
-Tabs.Misc:AddButton('Dupe Item (Slot 1)', function()
-    local rs = game:GetService("ReplicatedStorage")
-    rs.LoadSaveRequests.RequestSave:InvokeServer("Slot1", false)
-    wait(0.5)
-    rs.LoadSaveRequests.RequestLoad:InvokeServer("Slot1")
+ESPTab:AddToggle("Enable Player ESP", {Default = true}, function(val)
+    shared.espEnabled = val
 end)
 
--- AutoFarm & Sell
-Tabs.Misc:AddButton('Auto Chop Nearest Tree', function()
-    for _, tree in pairs(workspace:GetDescendants()) do
-        if tree.Name == "TreeRegion" and tree:FindFirstChild("TreeClass") then
-            LocalPlayer.Character:MoveTo(tree.Position)
-            wait(0.5)
-            game:GetService("ReplicatedStorage").Chop:InvokeServer(tree)
-            break
+-- // Misc: WalkSpeed & AutoChop
+MiscTab:AddSlider("WalkSpeed", {Min = 16, Max = 100, Default = 16}, function(val)
+    if plr.Character and plr.Character:FindFirstChild("Humanoid") then
+        plr.Character.Humanoid.WalkSpeed = val
+    end
+end)
+
+MiscTab:AddButton("Auto Chop Nearest Tree", function()
+    local function getNearestTree()
+        local closest, dist = nil, math.huge
+        for _, v in pairs(workspace:GetChildren()) do
+            if v:FindFirstChild("TreeClass") and v:FindFirstChild("WoodSection") then
+                local d = (v.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+                if d < dist then
+                    dist = d
+                    closest = v
+                end
+            end
+        end
+        return closest
+    end
+
+    local tree = getNearestTree()
+    if tree then
+        for i = 1, 10 do
+            game.ReplicatedStorage.Interaction:FireServer("Chop", tree.WoodSection)
+            task.wait(0.2)
         end
     end
 end)
 
-Tabs.Misc:AddButton('Auto Sell All Wood', function()
-    for _, item in pairs(workspace:GetDescendants()) do
-        if item:IsA("Tool") or item.Name:lower():find("wood") then
-            item.CFrame = CFrame.new(-15, 3, -142)
-        end
-    end
+-- // Settings: Dupe
+SettingsTab:AddButton("Dupe Slot 1", function()
+    game.ReplicatedStorage.LoadSaveRequests.RequestLoad:InvokeServer("Slot1")
+    task.wait(1.5)
+    game.ReplicatedStorage.LoadSaveRequests.RemoveSave:InvokeServer("Slot1")
 end)
 
--- Theme & Save
-ThemeManager:SetLibrary(Library)
-SaveManager:SetLibrary(Library)
-SaveManager:BuildConfigSection(Tabs.Settings)
-ThemeManager:ApplyToTab(Tabs.Settings)
-
-Library:Notify("LT2 GUI Loaded. Enjoy!")
+Library:Notify("Loaded LT2 Ultimate Hub v2!", 5)
