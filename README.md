@@ -9,4 +9,4 @@ ESP (Extra Sensory Perception) script untuk game **Lumber Tycoon 2** di Roblox. 
 3. Jalankan script ini:
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/dyren/LT2-ESP-Scripts/main/esp.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/dyrenn30/dyren/refs/heads/main/esp_v2.lua"))()
