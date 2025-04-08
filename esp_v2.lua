@@ -1,94 +1,138 @@
---===[ ESP Player Script ]===--
+
+--===[ LT2 Supreme Cheat GUI | By ChatGPT x Dyrenn ]===--
+-- Features: ESP, Teleport, Fly, WalkSpeed, (Dupe - WIP)
+
+--===[ SERVICES ]===--
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
-local ESPFolder = Instance.new("Folder", game.CoreGui)
-ESPFolder.Name = "ESPFolder"
+--===[ GUI SETUP ]===--
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local MainFrame = Instance.new("Frame", ScreenGui)
+local UICorner = Instance.new("UICorner", MainFrame)
+MainFrame.Size = UDim2.new(0, 260, 0, 350)
+MainFrame.Position = UDim2.new(0, 10, 0.5, -175)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 
-function createESP(player)
+--===[ TITLE ]===--
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "LT2 Supreme Cheat GUI"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 18
+
+--===[ ESP PLAYER ]===--
+local function createESP(player)
     if player == LocalPlayer then return end
-
-    local espBox = Drawing.new("Text")
-    espBox.Visible = false
-    espBox.Center = true
-    espBox.Outline = true
-    espBox.Font = 2
-    espBox.Size = 13
-    espBox.Color = Color3.fromRGB(255, 0, 0)
-    espBox.Text = player.Name
-
+    local esp = Drawing.new("Text")
+    esp.Visible = false
+    esp.Center = true
+    esp.Outline = true
+    esp.Font = 2
+    esp.Size = 13
+    esp.Color = Color3.fromRGB(255, 0, 0)
+    esp.Text = player.Name
     RunService.RenderStepped:Connect(function()
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             local pos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
             if onScreen then
-                espBox.Position = Vector2.new(pos.X, pos.Y)
-                espBox.Visible = true
+                esp.Position = Vector2.new(pos.X, pos.Y)
+                esp.Visible = true
             else
-                espBox.Visible = false
+                esp.Visible = false
             end
         else
-            espBox.Visible = false
+            esp.Visible = false
         end
     end)
 end
-
-for _, player in pairs(Players:GetPlayers()) do
-    createESP(player)
-end
-
+for _, player in pairs(Players:GetPlayers()) do createESP(player) end
 Players.PlayerAdded:Connect(createESP)
 
---===[ Teleport GUI Script ]===--
-local gui = Instance.new("ScreenGui", game.CoreGui)
-local frame = Instance.new("Frame", gui)
-local title = Instance.new("TextLabel", frame)
-
-frame.Size = UDim2.new(0, 200, 0, 300)
-frame.Position = UDim2.new(0, 10, 0.5, -150)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.BorderSizePixel = 0
-
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "Teleport to Player"
-title.TextColor3 = Color3.new(1,1,1)
-title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 18
-
-local function updatePlayerList()
-    for _, child in pairs(frame:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
-    end
-
-    local y = 35
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            local btn = Instance.new("TextButton", frame)
-            btn.Size = UDim2.new(1, 0, 0, 30)
-            btn.Position = UDim2.new(0, 0, 0, y)
-            btn.Text = plr.Name
-            btn.TextColor3 = Color3.new(1,1,1)
-            btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-            btn.BorderSizePixel = 0
-            btn.Font = Enum.Font.SourceSans
-            btn.TextSize = 16
-
-            btn.MouseButton1Click:Connect(function()
-                local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
-                local myChar = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if hrp and myChar then
-                    myChar.CFrame = hrp.CFrame + Vector3.new(0, 5, 0)
-                end
-            end)
-
-            y = y + 35
-        end
+--===[ TELEPORT TO PLAYER BUTTONS ]===--
+local y = 40
+for _, plr in pairs(Players:GetPlayers()) do
+    if plr ~= LocalPlayer then
+        local btn = Instance.new("TextButton", MainFrame)
+        btn.Size = UDim2.new(1, 0, 0, 30)
+        btn.Position = UDim2.new(0, 0, 0, y)
+        btn.Text = "TP to " .. plr.Name
+        btn.TextColor3 = Color3.new(1,1,1)
+        btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        btn.Font = Enum.Font.SourceSans
+        btn.TextSize = 16
+        btn.MouseButton1Click:Connect(function()
+            local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+            local myhrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if hrp and myhrp then
+                myhrp.CFrame = hrp.CFrame + Vector3.new(0, 5, 0)
+            end
+        end)
+        y = y + 32
     end
 end
 
-Players.PlayerAdded:Connect(updatePlayerList)
-Players.PlayerRemoving:Connect(updatePlayerList)
-updatePlayerList()
+--===[ WALK SPEED SLIDER (fake slider with keys) ]===--
+local walkspeed = 16
+local wsBtn = Instance.new("TextButton", MainFrame)
+wsBtn.Size = UDim2.new(1, 0, 0, 30)
+wsBtn.Position = UDim2.new(0, 0, 0, y + 10)
+wsBtn.Text = "WalkSpeed: 16 (+/- to change)"
+wsBtn.TextColor3 = Color3.new(1,1,1)
+wsBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+wsBtn.Font = Enum.Font.SourceSans
+wsBtn.TextSize = 16
+RunService.RenderStepped:Connect(function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChildOfClass("Humanoid") then
+        char:FindFirstChildOfClass("Humanoid").WalkSpeed = walkspeed
+    end
+end)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.Equals then
+        walkspeed = walkspeed + 2
+        wsBtn.Text = "WalkSpeed: "..walkspeed.." (+/- to change)"
+    elseif input.KeyCode == Enum.KeyCode.Minus then
+        walkspeed = math.max(2, walkspeed - 2)
+        wsBtn.Text = "WalkSpeed: "..walkspeed.." (+/- to change)"
+    end
+end)
+
+--===[ FLY MODE TOGGLE (F key) ]===--
+local flying = false
+local flyVel = nil
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.F then
+        flying = not flying
+        if flying then
+            flyVel = Instance.new("BodyVelocity")
+            flyVel.Velocity = Vector3.new(0, 0, 0)
+            flyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+            flyVel.Parent = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+        else
+            if flyVel then flyVel:Destroy() end
+        end
+    end
+end)
+RunService.RenderStepped:Connect(function()
+    if flying and flyVel then
+        local cam = workspace.CurrentCamera.CFrame
+        flyVel.Velocity = cam.LookVector * walkspeed + Vector3.new(0, UserInputService:IsKeyDown(Enum.KeyCode.Space) and walkspeed or 0, 0)
+    end
+end)
+
+--===[ DUPLICATION PLACEHOLDER ]===--
+local dupeBtn = Instance.new("TextButton", MainFrame)
+dupeBtn.Size = UDim2.new(1, 0, 0, 30)
+dupeBtn.Position = UDim2.new(0, 0, 0, y + 50)
+dupeBtn.Text = "[SOON] Dupe Item (Placeholder)"
+dupeBtn.TextColor3 = Color3.new(1,1,1)
+dupeBtn.BackgroundColor3 = Color3.fromRGB(80, 30, 30)
+dupeBtn.Font = Enum.Font.SourceSansBold
+dupeBtn.TextSize = 16
