@@ -1,22 +1,20 @@
 
---===[ LT2 Supreme Cheat GUI | By ChatGPT x Dyrenn ]===--
--- Features: ESP, Teleport, Fly, WalkSpeed, (Dupe - WIP)
+--===[ LT2 SUPREME COMBO SCRIPT v3 | By ChatGPT x Dyrenn ]===--
+-- Features: ESP Player, Teleport GUI, WalkSpeed Slider, Fly Toggle
 
---===[ SERVICES ]===--
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
---===[ GUI SETUP ]===--
+-- GUI
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 local MainFrame = Instance.new("Frame", ScreenGui)
-local UICorner = Instance.new("UICorner", MainFrame)
 MainFrame.Size = UDim2.new(0, 260, 0, 350)
 MainFrame.Position = UDim2.new(0, 10, 0.5, -175)
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Instance.new("UICorner", MainFrame)
 
---===[ TITLE ]===--
 local Title = Instance.new("TextLabel", MainFrame)
 Title.Size = UDim2.new(1, 0, 0, 30)
 Title.Text = "LT2 Supreme Cheat GUI"
@@ -25,7 +23,7 @@ Title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 Title.Font = Enum.Font.SourceSansBold
 Title.TextSize = 18
 
---===[ ESP PLAYER ]===--
+-- ESP
 local function createESP(player)
     if player == LocalPlayer then return end
     local esp = Drawing.new("Text")
@@ -39,12 +37,8 @@ local function createESP(player)
     RunService.RenderStepped:Connect(function()
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             local pos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
-            if onScreen then
-                esp.Position = Vector2.new(pos.X, pos.Y)
-                esp.Visible = true
-            else
-                esp.Visible = false
-            end
+            esp.Position = Vector2.new(pos.X, pos.Y)
+            esp.Visible = onScreen
         else
             esp.Visible = false
         end
@@ -53,7 +47,7 @@ end
 for _, player in pairs(Players:GetPlayers()) do createESP(player) end
 Players.PlayerAdded:Connect(createESP)
 
---===[ TELEPORT TO PLAYER BUTTONS ]===--
+-- Teleport Buttons
 local y = 40
 for _, plr in pairs(Players:GetPlayers()) do
     if plr ~= LocalPlayer then
@@ -76,12 +70,12 @@ for _, plr in pairs(Players:GetPlayers()) do
     end
 end
 
---===[ WALK SPEED SLIDER (fake slider with keys) ]===--
+-- WalkSpeed Control
 local walkspeed = 16
 local wsBtn = Instance.new("TextButton", MainFrame)
 wsBtn.Size = UDim2.new(1, 0, 0, 30)
 wsBtn.Position = UDim2.new(0, 0, 0, y + 10)
-wsBtn.Text = "WalkSpeed: 16 (+/- to change)"
+wsBtn.Text = "WalkSpeed: 16 (+/-)"
 wsBtn.TextColor3 = Color3.new(1,1,1)
 wsBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 wsBtn.Font = Enum.Font.SourceSans
@@ -96,14 +90,14 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode == Enum.KeyCode.Equals then
         walkspeed = walkspeed + 2
-        wsBtn.Text = "WalkSpeed: "..walkspeed.." (+/- to change)"
+        wsBtn.Text = "WalkSpeed: "..walkspeed.." (+/-)"
     elseif input.KeyCode == Enum.KeyCode.Minus then
         walkspeed = math.max(2, walkspeed - 2)
-        wsBtn.Text = "WalkSpeed: "..walkspeed.." (+/- to change)"
+        wsBtn.Text = "WalkSpeed: "..walkspeed.." (+/-)"
     end
 end)
 
---===[ FLY MODE TOGGLE (F key) ]===--
+-- Fly Toggle (F key)
 local flying = false
 local flyVel = nil
 UserInputService.InputBegan:Connect(function(input, gpe)
@@ -126,13 +120,3 @@ RunService.RenderStepped:Connect(function()
         flyVel.Velocity = cam.LookVector * walkspeed + Vector3.new(0, UserInputService:IsKeyDown(Enum.KeyCode.Space) and walkspeed or 0, 0)
     end
 end)
-
---===[ DUPLICATION PLACEHOLDER ]===--
-local dupeBtn = Instance.new("TextButton", MainFrame)
-dupeBtn.Size = UDim2.new(1, 0, 0, 30)
-dupeBtn.Position = UDim2.new(0, 0, 0, y + 50)
-dupeBtn.Text = "[SOON] Dupe Item (Placeholder)"
-dupeBtn.TextColor3 = Color3.new(1,1,1)
-dupeBtn.BackgroundColor3 = Color3.fromRGB(80, 30, 30)
-dupeBtn.Font = Enum.Font.SourceSansBold
-dupeBtn.TextSize = 16
