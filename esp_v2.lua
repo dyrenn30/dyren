@@ -1,33 +1,32 @@
-
---===[ LT2 SUPREME COMBO SCRIPT v3 | AutoFarm + Dupe + Sell ]===--
+# Rewriting esp_v2.lua by adding auto farm + auto sell + auto equip + auto cut tree
+esp_v2_updated = """
+--===[ LT2 ESP v2 EXTENDED | AUTO FARM + AUTO SELL ]===--
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
-local UserInputService = game:GetService("UserInputService")
 
--- GUI Setup
+-- GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 280, 0, 360)
-frame.Position = UDim2.new(0, 10, 0.5, -180)
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.Size = UDim2.new(0, 280, 0, 400)
+frame.Position = UDim2.new(0, 10, 0.5, -200)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 Instance.new("UICorner", frame)
 
-local function createLabel(txt, y)
-    local l = Instance.new("TextLabel", frame)
-    l.Size = UDim2.new(1, 0, 0, 30)
-    l.Position = UDim2.new(0, 0, 0, y)
-    l.Text = txt
-    l.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    l.TextColor3 = Color3.new(1,1,1)
-    l.Font = Enum.Font.SourceSansBold
-    l.TextSize = 16
+local function makeButton(text, yPos, callback)
+    local btn = Instance.new("TextButton", frame)
+    btn.Size = UDim2.new(1, 0, 0, 30)
+    btn.Position = UDim2.new(0, 0, 0, yPos)
+    btn.Text = text
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Font = Enum.Font.SourceSans
+    btn.TextSize = 16
+    btn.MouseButton1Click:Connect(callback)
 end
 
-createLabel("LT2 Supreme v3", 0)
-
--- ESP Player
+-- ESP Players
 for _, player in pairs(Players:GetPlayers()) do
     if player ~= LocalPlayer then
         local esp = Drawing.new("Text")
@@ -36,7 +35,7 @@ for _, player in pairs(Players:GetPlayers()) do
         esp.Outline = true
         esp.Font = 2
         esp.Size = 13
-        esp.Color = Color3.fromRGB(255, 0, 0)
+        esp.Color = Color3.fromRGB(0, 255, 0)
         esp.Text = player.Name
         RunService.RenderStepped:Connect(function()
             if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
@@ -50,17 +49,48 @@ for _, player in pairs(Players:GetPlayers()) do
     end
 end
 
--- Auto Farm Trees
+-- === AUTO FARM SYSTEM ===
 local autofarm = false
-local function startAutoFarm()
+local axeName = "BasicHatchet" -- bisa lo ganti kalo axe-nya beda
+local function getAxe()
+    for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
+        if tool.Name:find("Axe") or tool.Name:find("Hatchet") then
+            return tool
+        end
+    end
+    return nil
+end
+
+local function equipAxe()
+    local axe = getAxe()
+    if axe then
+        axe.Parent = LocalPlayer.Character
+    end
+end
+
+local function hitTree(section)
+    local args = {
+        [1] = section,
+        [2] = section.Position,
+        [3] = 1,
+        [4] = getAxe()
+    }
+    game.ReplicatedStorage.Interaction.RemoteProxy:FireServer(unpack(args))
+end
+
+local function startFarm()
     autofarm = not autofarm
     while autofarm do
+        equipAxe()
         for _, tree in pairs(workspace:GetChildren()) do
             if tree.Name:lower():find("tree") and tree:FindFirstChild("WoodSection") then
-                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    hrp.CFrame = tree.WoodSection.CFrame + Vector3.new(0,3,0)
-                    wait(0.5)
+                local sec = tree:FindFirstChild("WoodSection")
+                if sec then
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = sec.CFrame + Vector3.new(0,3,0)
+                    for i=1,10 do
+                        hitTree(sec)
+                        wait(0.2)
+                    end
                 end
             end
         end
@@ -68,43 +98,27 @@ local function startAutoFarm()
     end
 end
 
-local farmBtn = Instance.new("TextButton", frame)
-farmBtn.Size = UDim2.new(1, 0, 0, 30)
-farmBtn.Position = UDim2.new(0, 0, 0, 40)
-farmBtn.Text = "AutoFarm Tree (Toggle)"
-farmBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-farmBtn.TextColor3 = Color3.new(1,1,1)
-farmBtn.Font = Enum.Font.SourceSans
-farmBtn.TextSize = 16
-farmBtn.MouseButton1Click:Connect(startAutoFarm)
+makeButton("AutoFarm Tree (Full AFK)", 40, startFarm)
 
--- Auto Sell Wood
+-- === AUTO SELL SYSTEM ===
 local autosell = false
-local function startAutoSell()
+local function sellWood()
     autosell = not autosell
     while autosell do
         for _, wood in pairs(workspace:GetChildren()) do
             if wood.Name == "WoodSection" and wood:IsA("Part") then
-                wood.CFrame = CFrame.new(-126, 3, 113) -- default drop-off zone
-                wait(0.2)
+                wood.CFrame = CFrame.new(-126, 3, 113) -- drop-off pos
+                wait(0.1)
             end
         end
         wait(1)
     end
 end
 
-local sellBtn = Instance.new("TextButton", frame)
-sellBtn.Size = UDim2.new(1, 0, 0, 30)
-sellBtn.Position = UDim2.new(0, 0, 0, 75)
-sellBtn.Text = "AutoSell Wood (Toggle)"
-sellBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-sellBtn.TextColor3 = Color3.new(1,1,1)
-sellBtn.Font = Enum.Font.SourceSans
-sellBtn.TextSize = 16
-sellBtn.MouseButton1Click:Connect(startAutoSell)
+makeButton("AutoSell Wood", 80, sellWood)
 
--- Dupe Item (drop fast method)
-local function dupeItem()
+-- === DUPLICATE ITEM ===
+local function dupe()
     for _, item in pairs(LocalPlayer.Backpack:GetChildren()) do
         item.Parent = LocalPlayer.Character
         wait(0.05)
@@ -112,12 +126,49 @@ local function dupeItem()
     end
 end
 
-local dupeBtn = Instance.new("TextButton", frame)
-dupeBtn.Size = UDim2.new(1, 0, 0, 30)
-dupeBtn.Position = UDim2.new(0, 0, 0, 110)
-dupeBtn.Text = "Dupe Item (Backpack)"
-dupeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-dupeBtn.TextColor3 = Color3.new(1,1,1)
-dupeBtn.Font = Enum.Font.SourceSans
-dupeBtn.TextSize = 16
-dupeBtn.MouseButton1Click:Connect(dupeItem)
+makeButton("Dupe Items (Backpack)", 120, dupe)
+
+-- === WALK SPEED ===
+local wsToggled = false
+local function toggleSpeed()
+    wsToggled = not wsToggled
+    if wsToggled then
+        LocalPlayer.Character.Humanoid.WalkSpeed = 75
+    else
+        LocalPlayer.Character.Humanoid.WalkSpeed = 16
+    end
+end
+
+makeButton("Toggle Speed (75)", 160, toggleSpeed)
+
+-- === FLY ===
+local flying = false
+local function fly()
+    flying = not flying
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local bv = Instance.new("BodyVelocity")
+    bv.Velocity = Vector3.new(0,0,0)
+    bv.MaxForce = Vector3.new(1e5,1e5,1e5)
+    bv.Parent = root
+
+    RunService.RenderStepped:Connect(function()
+        if flying then
+            bv.Velocity = Vector3.new(0, 50, 0)
+        else
+            bv:Destroy()
+        end
+    end)
+end
+
+makeButton("Toggle Fly", 200, fly)
+"""
+
+# Save the updated script
+file_path_espv2 = "/mnt/data/esp_v2.lua"
+with open(file_path_espv2, "w") as f:
+    f.write(esp_v2_updated)
+
+file_path_espv2
